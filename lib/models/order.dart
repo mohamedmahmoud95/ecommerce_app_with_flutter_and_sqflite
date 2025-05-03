@@ -1,14 +1,14 @@
 class Order {
-  final int? orderId;
+  final int? id;
   final int userId;
-  final String date;
+  final DateTime date;
   final double grandTotal;
   final String status;
   final String paymentMethod;
   final List<OrderProduct>? orderProducts;
 
   Order({
-    this.orderId,
+    this.id,
     required this.userId,
     required this.date,
     required this.grandTotal,
@@ -19,9 +19,9 @@ class Order {
 
   Map<String, dynamic> toMap() {
     return {
-      'OrderID': orderId,
+      'OrderID': id,
       'User_ID': userId,
-      'Date': date,
+      'Date': date.toIso8601String(),
       'GrandTotal': grandTotal,
       'Status': status,
       'PaymentMethod': paymentMethod,
@@ -30,12 +30,18 @@ class Order {
 
   factory Order.fromMap(Map<String, dynamic> map) {
     return Order(
-      orderId: map['OrderID'],
+      id: map['OrderID'],
       userId: map['User_ID'],
-      date: map['Date'],
+      date: DateTime.parse(map['Date']),
       grandTotal: map['GrandTotal'],
       status: map['Status'],
       paymentMethod: map['PaymentMethod'],
+      orderProducts:
+          map['OrderProducts'] != null
+              ? (map['OrderProducts'] as List)
+                  .map((p) => OrderProduct.fromMap(p))
+                  .toList()
+              : null,
     );
   }
 }

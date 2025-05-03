@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/cart.dart';
 import '../models/product.dart';
 import '../services/database_helper.dart';
 
@@ -292,7 +291,7 @@ class _CartScreenState extends State<CartScreen> {
                       color: Theme.of(context).colorScheme.surface,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
+                          color: Colors.grey.withAlpha(128),
                           spreadRadius: 1,
                           blurRadius: 3,
                           offset: const Offset(0, -1),

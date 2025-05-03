@@ -25,11 +25,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _formKey.currentState?.patchValue({
         'name': widget.product!.name,
         'description': widget.product!.description,
-        'price': widget.product!.price,
-        'amount': widget.product!.amount,
+        'price': widget.product!.price.toString(),
+        'amount': widget.product!.amount.toString(),
         'category': widget.product!.category,
         'size': widget.product!.size,
         'color': widget.product!.color,
+        'supplierId': widget.product!.supplierId?.toString(),
       });
     }
   }
@@ -39,32 +40,69 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       setState(() => _isLoading = true);
       try {
         final formData = _formKey.currentState!.value;
+
+        // Validate and convert numeric fields
+        double price;
+        int amount;
+        int? supplierId;
+
+        try {
+          price = double.parse(formData['price']);
+          if (price <= 0) throw FormatException('Price must be greater than 0');
+        } catch (e) {
+          throw 'Please enter a valid price greater than 0';
+        }
+
+        try {
+          amount = int.parse(formData['amount']);
+          if (amount < 0) throw FormatException('Amount cannot be negative');
+        } catch (e) {
+          throw 'Please enter a valid amount (non-negative number)';
+        }
+
+        if (formData['supplierId']?.isNotEmpty == true) {
+          try {
+            supplierId = int.parse(formData['supplierId']);
+          } catch (e) {
+            throw 'Please enter a valid supplier ID';
+          }
+        }
+
         final product = Product(
-          productId: widget.product?.productId,
+          id: widget.product?.id,
           name: formData['name'],
           description: formData['description'],
-          price: formData['price'],
-          amount: formData['amount'],
+          price: price,
+          amount: amount,
           category: formData['category'],
           size: formData['size'],
           color: formData['color'],
+          supplierId: supplierId,
         );
 
         if (widget.product == null) {
           await _dbHelper.insert('Products', product.toMap());
         } else {
           await _dbHelper.update('Products', product.toMap(), 'ProductID = ?', [
-            product.productId,
+            product.id,
           ]);
         }
+
         if (mounted) {
-          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Product ${widget.product == null ? 'added' : 'updated'} successfully',
+              ),
+            ),
+          );
+          Navigator.pop(context, true);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          );
         }
       } finally {
         if (mounted) {
@@ -80,16 +118,19 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       appBar: AppBar(
         title: Text(widget.product == null ? 'Add Product' : 'Edit Product'),
       ),
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: FormBuilder(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
               FormBuilderTextField(
                 name: 'name',
                 decoration: const InputDecoration(labelText: 'Name'),
-                validator: FormBuilderValidators.required(),
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.required(),
+                  FormBuilderValidators.minLength(2),
+                ]),
               ),
               const SizedBox(height: 16),
               FormBuilderTextField(
@@ -100,33 +141,24 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               const SizedBox(height: 16),
               FormBuilderTextField(
                 name: 'price',
-                decoration: const InputDecoration(labelText: 'Price'),
+                decoration: const InputDecoration(
+                  labelText: 'Price',
+                  prefixText: '\$',
+                ),
                 keyboardType: TextInputType.number,
                 validator: FormBuilderValidators.compose([
                   FormBuilderValidators.required(),
                   FormBuilderValidators.numeric(),
-                  (value) {
-                    if (value != null && double.parse(value) <= 0) {
-                      return 'Price must be greater than 0';
-                    }
-                    return null;
-                  },
                 ]),
               ),
               const SizedBox(height: 16),
               FormBuilderTextField(
                 name: 'amount',
-                decoration: const InputDecoration(labelText: 'Amount in Stock'),
+                decoration: const InputDecoration(labelText: 'Amount'),
                 keyboardType: TextInputType.number,
                 validator: FormBuilderValidators.compose([
                   FormBuilderValidators.required(),
-                  FormBuilderValidators.integer(),
-                  (value) {
-                    if (value != null && int.parse(value) < 0) {
-                      return 'Amount cannot be negative';
-                    }
-                    return null;
-                  },
+                  FormBuilderValidators.numeric(),
                 ]),
               ),
               const SizedBox(height: 16),
@@ -144,6 +176,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               FormBuilderTextField(
                 name: 'color',
                 decoration: const InputDecoration(labelText: 'Color'),
+              ),
+              const SizedBox(height: 16),
+              FormBuilderTextField(
+                name: 'supplierId',
+                decoration: const InputDecoration(labelText: 'Supplier ID'),
+                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 24),
               ElevatedButton(

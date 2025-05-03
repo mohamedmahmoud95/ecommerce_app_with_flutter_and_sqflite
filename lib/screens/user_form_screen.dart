@@ -24,8 +24,8 @@ class _UserFormScreenState extends State<UserFormScreen> {
     if (widget.user != null) {
       _formKey.currentState?.patchValue({
         'name': widget.user!.name,
-        'email': widget.user!.email,
         'password': widget.user!.password,
+        'email': widget.user!.email,
         'gender': widget.user!.gender,
         'dateOfBirth': widget.user!.dateOfBirth,
         'userType': widget.user!.userType,
@@ -38,15 +38,27 @@ class _UserFormScreenState extends State<UserFormScreen> {
       setState(() => _isLoading = true);
       try {
         final formData = _formKey.currentState!.value;
+
+        // Validate email format
+        if (!RegExp(
+          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+        ).hasMatch(formData['email'])) {
+          throw 'Please enter a valid email address';
+        }
+
+        // Validate password strength
+        if (formData['password'].length < 6) {
+          throw 'Password must be at least 6 characters long';
+        }
+
         final user = User(
-          userId: widget.user?.userId,
+          id: widget.user?.id,
           name: formData['name'],
-          email: formData['email'],
           password: formData['password'],
+          email: formData['email'],
           gender: formData['gender'],
-          dateOfBirth: formData['dateOfBirth'],
-          dateJoined:
-              widget.user?.dateJoined ?? DateTime.now().toIso8601String(),
+          dateOfBirth: formData['dateOfBirth'] as DateTime?,
+          dateJoined: widget.user?.dateJoined ?? DateTime.now(),
           userType: formData['userType'],
         );
 
@@ -54,17 +66,25 @@ class _UserFormScreenState extends State<UserFormScreen> {
           await _dbHelper.insert('Users', user.toMap());
         } else {
           await _dbHelper.update('Users', user.toMap(), 'User_ID = ?', [
-            user.userId,
+            user.id,
           ]);
         }
+
         if (mounted) {
-          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'User ${widget.user == null ? 'added' : 'updated'} successfully',
+              ),
+            ),
+          );
+          Navigator.pop(context, true);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          );
         }
       } finally {
         if (mounted) {
@@ -84,20 +104,14 @@ class _UserFormScreenState extends State<UserFormScreen> {
         padding: const EdgeInsets.all(16.0),
         child: FormBuilder(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
               FormBuilderTextField(
                 name: 'name',
                 decoration: const InputDecoration(labelText: 'Name'),
-                validator: FormBuilderValidators.required(),
-              ),
-              const SizedBox(height: 16),
-              FormBuilderTextField(
-                name: 'email',
-                decoration: const InputDecoration(labelText: 'Email'),
                 validator: FormBuilderValidators.compose([
                   FormBuilderValidators.required(),
-                  FormBuilderValidators.email(),
+                  FormBuilderValidators.minLength(2),
                 ]),
               ),
               const SizedBox(height: 16),
@@ -105,10 +119,23 @@ class _UserFormScreenState extends State<UserFormScreen> {
                 name: 'password',
                 decoration: const InputDecoration(labelText: 'Password'),
                 obscureText: true,
-                validator: FormBuilderValidators.required(),
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.required(),
+                  FormBuilderValidators.minLength(6),
+                ]),
               ),
               const SizedBox(height: 16),
-              FormBuilderDropdown<String>(
+              FormBuilderTextField(
+                name: 'email',
+                decoration: const InputDecoration(labelText: 'Email'),
+                keyboardType: TextInputType.emailAddress,
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.required(),
+                  FormBuilderValidators.email(),
+                ]),
+              ),
+              const SizedBox(height: 16),
+              FormBuilderDropdown(
                 name: 'gender',
                 decoration: const InputDecoration(labelText: 'Gender'),
                 items:
@@ -125,13 +152,13 @@ class _UserFormScreenState extends State<UserFormScreen> {
               FormBuilderDateTimePicker(
                 name: 'dateOfBirth',
                 decoration: const InputDecoration(labelText: 'Date of Birth'),
+                initialValue: widget.user?.dateOfBirth,
                 inputType: InputType.date,
               ),
               const SizedBox(height: 16),
-              FormBuilderDropdown<String>(
+              FormBuilderDropdown(
                 name: 'userType',
                 decoration: const InputDecoration(labelText: 'User Type'),
-                initialValue: 'Customer',
                 items:
                     ['Customer', 'Admin']
                         .map(

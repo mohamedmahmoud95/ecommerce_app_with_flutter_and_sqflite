@@ -37,10 +37,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       setState(() {
         _products =
             products.map((product) => Product.fromMap(product)).toList();
-        _categories = [
-          'All',
-          ..._products.map((p) => p.category).toSet().toList(),
-        ];
+        _categories = ['All', ..._products.map((p) => p.category).toSet()];
         _applyFilters();
       });
     } finally {
@@ -114,13 +111,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
     final cartProducts = await _dbHelper.query(
       'CartProducts',
       where: 'CartID = ? AND ProductID = ?',
-      whereArgs: [cartId, product.productId],
+      whereArgs: [cartId, product.id],
     );
 
     if (cartProducts.isEmpty) {
       await _dbHelper.insert('CartProducts', {
         'CartID': cartId,
-        'ProductID': product.productId,
+        'ProductID': product.id,
         'Quantity': 1,
       });
     } else {
@@ -128,7 +125,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
         'CartProducts',
         {'Quantity': cartProducts.first['Quantity'] + 1},
         'CartID = ? AND ProductID = ?',
-        [cartId, product.productId],
+        [cartId, product.id],
       );
     }
 
@@ -140,8 +137,26 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   Future<void> _deleteProduct(int productId) async {
-    await _dbHelper.delete('Products', 'ProductID = ?', [productId]);
-    _loadProducts();
+    try {
+      await _dbHelper.delete('Products', 'ProductID = ?', [productId]);
+      setState(() {
+        _products.removeWhere((p) => p.id == productId);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Product deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting product: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -313,6 +328,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                       _loadProducts();
                                     }
                                     : null,
+                            onLongPress: () => _deleteProduct(product.id!),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [

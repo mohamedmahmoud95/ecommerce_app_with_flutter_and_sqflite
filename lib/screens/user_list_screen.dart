@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/user.dart';
 import '../services/database_helper.dart';
 import 'user_form_screen.dart';
@@ -91,7 +90,7 @@ class _UserListScreenState extends State<UserListScreen> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  _deleteUser(user.userId!);
+                                  _deleteUser(user.id!);
                                   Navigator.pop(context);
                                 },
                                 child: const Text('Delete'),

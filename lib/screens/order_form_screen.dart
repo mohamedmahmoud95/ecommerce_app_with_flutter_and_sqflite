@@ -19,7 +19,7 @@ class _OrderFormScreenState extends State<OrderFormScreen> {
   final _dbHelper = DatabaseHelper();
   bool _isLoading = false;
   List<Product> _products = [];
-  List<Map<String, dynamic>> _selectedProducts = [];
+  List<Map<String, dynamic>> _orderProducts = [];
 
   @override
   void initState() {
@@ -27,64 +27,60 @@ class _OrderFormScreenState extends State<OrderFormScreen> {
     _loadProducts();
     if (widget.order != null) {
       _formKey.currentState?.patchValue({
-        'userId': widget.order!.userId,
+        'userId': widget.order!.userId.toString(),
         'date': widget.order!.date,
-        'grandTotal': widget.order!.grandTotal,
         'status': widget.order!.status,
         'paymentMethod': widget.order!.paymentMethod,
       });
+      _loadOrderProducts();
     }
   }
 
   Future<void> _loadProducts() async {
-    final products = await _dbHelper.query('Products');
-    setState(() {
-      _products = products.map((product) => Product.fromMap(product)).toList();
-    });
+    try {
+      final products = await _dbHelper.query('Products');
+      setState(() {
+        _products = products.map((p) => Product.fromMap(p)).toList();
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading products: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
-  Future<void> _saveOrder() async {
-    if (_formKey.currentState?.saveAndValidate() ?? false) {
-      setState(() => _isLoading = true);
-      try {
-        final formData = _formKey.currentState!.value;
-        final order = Order(
-          orderId: widget.order?.orderId,
-          userId: formData['userId'],
-          date: formData['date'] ?? DateTime.now().toIso8601String(),
-          grandTotal: formData['grandTotal'],
-          status: formData['status'],
-          paymentMethod: formData['paymentMethod'],
+  Future<void> _loadOrderProducts() async {
+    if (widget.order == null) return;
+    try {
+      final orderProducts = await _dbHelper.query(
+        'OrderProducts',
+        where: 'OrderID = ?',
+        whereArgs: [widget.order!.id],
+      );
+      setState(() {
+        _orderProducts =
+            orderProducts
+                .map(
+                  (p) => {
+                    'ProductID': p['ProductID'],
+                    'Quantity': p['Quantity'],
+                  },
+                )
+                .toList();
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading order products: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
         );
-
-        if (widget.order == null) {
-          final orderId = await _dbHelper.insert('Orders', order.toMap());
-          for (final product in _selectedProducts) {
-            await _dbHelper.insert('OrderProducts', {
-              'OrderID': orderId,
-              'ProductID': product['productId'],
-              'Quantity': product['quantity'],
-            });
-          }
-        } else {
-          await _dbHelper.update('Orders', order.toMap(), 'OrderID = ?', [
-            order.orderId,
-          ]);
-          // Update order products if needed
-        }
-        if (mounted) {
-          Navigator.pop(context);
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
       }
     }
   }
@@ -95,42 +91,42 @@ class _OrderFormScreenState extends State<OrderFormScreen> {
       builder:
           (context) => AlertDialog(
             title: const Text('Add Product'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FormBuilderDropdown<int>(
-                  name: 'productId',
-                  decoration: const InputDecoration(labelText: 'Product'),
-                  items:
-                      _products
-                          .map(
-                            (product) => DropdownMenuItem(
-                              value: product.productId,
-                              child: Text(
-                                '${product.name} - \$${product.price}',
+            content: FormBuilder(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FormBuilderDropdown(
+                    name: 'productId',
+                    decoration: const InputDecoration(labelText: 'Product'),
+                    items:
+                        _products
+                            .map(
+                              (p) => DropdownMenuItem(
+                                value: p.id,
+                                child: Text('${p.name} - \$${p.price}'),
                               ),
-                            ),
-                          )
-                          .toList(),
-                  validator: FormBuilderValidators.required(),
-                ),
-                const SizedBox(height: 16),
-                FormBuilderTextField(
-                  name: 'quantity',
-                  decoration: const InputDecoration(labelText: 'Quantity'),
-                  keyboardType: TextInputType.number,
-                  validator: FormBuilderValidators.compose([
-                    FormBuilderValidators.required(),
-                    FormBuilderValidators.integer(),
-                    (value) {
-                      if (value != null && int.parse(value) <= 0) {
-                        return 'Quantity must be greater than 0';
-                      }
-                      return null;
-                    },
-                  ]),
-                ),
-              ],
+                            )
+                            .toList(),
+                    validator: FormBuilderValidators.required(),
+                  ),
+                  const SizedBox(height: 16),
+                  FormBuilderTextField(
+                    name: 'quantity',
+                    decoration: const InputDecoration(labelText: 'Quantity'),
+                    keyboardType: TextInputType.number,
+                    validator: FormBuilderValidators.compose([
+                      FormBuilderValidators.required(),
+                      FormBuilderValidators.numeric(),
+                      (value) {
+                        if (value != null && int.parse(value) <= 0) {
+                          return 'Quantity must be greater than 0';
+                        }
+                        return null;
+                      },
+                    ]),
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -139,12 +135,12 @@ class _OrderFormScreenState extends State<OrderFormScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  if (_formKey.currentState?.saveAndValidate() ?? false) {
-                    final formData = _formKey.currentState!.value;
+                  if (FormBuilder.of(context)?.saveAndValidate() ?? false) {
+                    final formData = FormBuilder.of(context)!.value;
                     setState(() {
-                      _selectedProducts.add({
-                        'productId': formData['productId'],
-                        'quantity': int.parse(formData['quantity']),
+                      _orderProducts.add({
+                        'ProductID': formData['productId'],
+                        'Quantity': int.parse(formData['quantity']),
                       });
                     });
                     Navigator.pop(context);
@@ -157,52 +153,116 @@ class _OrderFormScreenState extends State<OrderFormScreen> {
     );
   }
 
+  Future<void> _saveOrder() async {
+    if (_formKey.currentState?.saveAndValidate() ?? false) {
+      setState(() => _isLoading = true);
+      try {
+        final formData = _formKey.currentState!.value;
+
+        // Validate and convert numeric fields
+        int userId;
+        DateTime date;
+
+        try {
+          userId = int.parse(formData['userId']);
+        } catch (e) {
+          throw 'Please enter a valid user ID';
+        }
+
+        date = formData['date'] as DateTime;
+
+        if (_orderProducts.isEmpty) {
+          throw 'Please add at least one product to the order';
+        }
+
+        final order = Order(
+          id: widget.order?.id,
+          userId: userId,
+          date: date,
+          grandTotal: 0.0, // Will be calculated by trigger
+          status: formData['status'],
+          paymentMethod: formData['paymentMethod'],
+        );
+
+        if (widget.order == null) {
+          final orderId = await _dbHelper.insert('Orders', order.toMap());
+          for (var product in _orderProducts) {
+            await _dbHelper.insert('OrderProducts', {
+              'OrderID': orderId,
+              'ProductID': product['ProductID'],
+              'Quantity': product['Quantity'],
+            });
+          }
+        } else {
+          await _dbHelper.update('Orders', order.toMap(), 'OrderID = ?', [
+            order.id,
+          ]);
+          await _dbHelper.delete('OrderProducts', 'OrderID = ?', [order.id]);
+          for (var product in _orderProducts) {
+            await _dbHelper.insert('OrderProducts', {
+              'OrderID': order.id,
+              'ProductID': product['ProductID'],
+              'Quantity': product['Quantity'],
+            });
+          }
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Order ${widget.order == null ? 'added' : 'updated'} successfully',
+              ),
+            ),
+          );
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.order == null ? 'Add Order' : 'Edit Order'),
       ),
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: FormBuilder(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
               FormBuilderTextField(
                 name: 'userId',
                 decoration: const InputDecoration(labelText: 'User ID'),
                 keyboardType: TextInputType.number,
-                validator: FormBuilderValidators.required(),
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.required(),
+                  FormBuilderValidators.numeric(),
+                ]),
               ),
               const SizedBox(height: 16),
               FormBuilderDateTimePicker(
                 name: 'date',
                 decoration: const InputDecoration(labelText: 'Date'),
-                inputType: InputType.date,
-                initialValue: DateTime.now(),
+                initialValue: widget.order?.date ?? DateTime.now(),
+                validator: FormBuilderValidators.required(),
               ),
               const SizedBox(height: 16),
-              FormBuilderTextField(
-                name: 'grandTotal',
-                decoration: const InputDecoration(labelText: 'Grand Total'),
-                keyboardType: TextInputType.number,
-                validator: FormBuilderValidators.compose([
-                  FormBuilderValidators.required(),
-                  FormBuilderValidators.numeric(),
-                  (value) {
-                    if (value != null && double.parse(value) <= 0) {
-                      return 'Total must be greater than 0';
-                    }
-                    return null;
-                  },
-                ]),
-              ),
-              const SizedBox(height: 16),
-              FormBuilderDropdown<String>(
+              FormBuilderDropdown(
                 name: 'status',
                 decoration: const InputDecoration(labelText: 'Status'),
-                initialValue: 'Pending',
                 items:
                     ['Pending', 'Shipped', 'Delivered']
                         .map(
@@ -215,40 +275,46 @@ class _OrderFormScreenState extends State<OrderFormScreen> {
                 validator: FormBuilderValidators.required(),
               ),
               const SizedBox(height: 16),
-              FormBuilderTextField(
+              FormBuilderDropdown(
                 name: 'paymentMethod',
                 decoration: const InputDecoration(labelText: 'Payment Method'),
+                items:
+                    ['Credit Card', 'PayPal', 'Bank Transfer']
+                        .map(
+                          (method) => DropdownMenuItem(
+                            value: method,
+                            child: Text(method),
+                          ),
+                        )
+                        .toList(),
                 validator: FormBuilderValidators.required(),
               ),
               const SizedBox(height: 24),
+              const Text('Products:', style: TextStyle(fontSize: 18)),
+              const SizedBox(height: 8),
+              ..._orderProducts.map((product) {
+                final productName =
+                    _products
+                        .firstWhere((p) => p.id == product['ProductID'])
+                        .name;
+                return ListTile(
+                  title: Text(productName),
+                  subtitle: Text('Quantity: ${product['Quantity']}'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () {
+                      setState(() {
+                        _orderProducts.remove(product);
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+              const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _addProduct,
                 child: const Text('Add Product'),
               ),
-              const SizedBox(height: 16),
-              if (_selectedProducts.isNotEmpty)
-                Column(
-                  children:
-                      _selectedProducts.map((product) {
-                        final productData = _products.firstWhere(
-                          (p) => p.productId == product['productId'],
-                        );
-                        return ListTile(
-                          title: Text(productData.name),
-                          subtitle: Text(
-                            'Quantity: ${product['quantity']} - Total: \$${(productData.price * product['quantity']).toStringAsFixed(2)}',
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () {
-                              setState(() {
-                                _selectedProducts.remove(product);
-                              });
-                            },
-                          ),
-                        );
-                      }).toList(),
-                ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isLoading ? null : _saveOrder,

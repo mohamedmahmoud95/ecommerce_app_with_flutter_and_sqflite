@@ -135,7 +135,10 @@ class DatabaseHelper {
       CREATE TABLE Discounts (
         Discount_ID INTEGER PRIMARY KEY AUTOINCREMENT,
         Percentage REAL NOT NULL CHECK(Percentage > 0 AND Percentage <= 100),
-        ExpiryDate TEXT NOT NULL
+        ExpiryDate TEXT NOT NULL,
+        ProductID INTEGER,
+        Category TEXT,
+        FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
       )
     ''');
 
@@ -199,6 +202,55 @@ class DatabaseHelper {
       'UserType': 'Customer',
     });
 
+    await db.insert('Users', {
+      'Name': 'Jane Smith',
+      'Password': 'password123',
+      'Email': 'jane@example.com',
+      'Gender': 'Female',
+      'DateOfBirth': '1992-08-20',
+      'DateJoined': DateTime.now().toIso8601String(),
+      'UserType': 'Customer',
+    });
+
+    await db.insert('Users', {
+      'Name': 'Mike Johnson',
+      'Password': 'password123',
+      'Email': 'mike@example.com',
+      'Gender': 'Male',
+      'DateOfBirth': '1988-11-30',
+      'DateJoined': DateTime.now().toIso8601String(),
+      'UserType': 'Customer',
+    });
+
+    await db.insert('Users', {
+      'Name': 'Sarah Wilson',
+      'Password': 'password123',
+      'Email': 'sarah@example.com',
+      'Gender': 'Female',
+      'DateOfBirth': '1993-04-12',
+      'DateJoined': DateTime.now().toIso8601String(),
+      'UserType': 'Customer',
+    });
+
+    // Insert sample suppliers
+    await db.insert('Suppliers', {
+      'Name': 'Tech Supplies Inc.',
+      'ContactNumber': '+1234567890',
+      'Address': '123 Tech Street, Silicon Valley',
+    });
+
+    await db.insert('Suppliers', {
+      'Name': 'Fashion World Ltd.',
+      'ContactNumber': '+0987654321',
+      'Address': '456 Fashion Avenue, New York',
+    });
+
+    await db.insert('Suppliers', {
+      'Name': 'Home Essentials Co.',
+      'ContactNumber': '+1122334455',
+      'Address': '789 Home Lane, Chicago',
+    });
+
     // Insert sample products
     await db.insert('Products', {
       'Name': 'Smartphone X',
@@ -208,6 +260,7 @@ class DatabaseHelper {
       'Category': 'Electronics',
       'Size': '6.1 inches',
       'Color': 'Black',
+      'SupplierID': 1,
     });
 
     await db.insert('Products', {
@@ -218,13 +271,193 @@ class DatabaseHelper {
       'Category': 'Electronics',
       'Size': '15.6 inches',
       'Color': 'Silver',
+      'SupplierID': 1,
     });
 
-    // Insert sample supplier
-    await db.insert('Suppliers', {
-      'Name': 'Tech Supplies Inc.',
-      'ContactNumber': '+1234567890',
-      'Address': '123 Tech Street, Silicon Valley',
+    await db.insert('Products', {
+      'Name': 'Designer Dress',
+      'Description': 'Elegant evening dress',
+      'Price': 299.99,
+      'Amount': 20,
+      'Category': 'Fashion',
+      'Size': 'M',
+      'Color': 'Red',
+      'SupplierID': 2,
+    });
+
+    await db.insert('Products', {
+      'Name': 'Coffee Maker',
+      'Description': 'Automatic coffee maker with timer',
+      'Price': 89.99,
+      'Amount': 40,
+      'Category': 'Home',
+      'Size': 'Standard',
+      'Color': 'Black',
+      'SupplierID': 3,
+    });
+
+    await db.insert('Products', {
+      'Name': 'Wireless Headphones',
+      'Description': 'Noise-cancelling wireless headphones',
+      'Price': 199.99,
+      'Amount': 25,
+      'Category': 'Electronics',
+      'Size': 'One Size',
+      'Color': 'White',
+      'SupplierID': 1,
+    });
+
+    await db.insert('Products', {
+      'Name': 'Running Shoes',
+      'Description': 'Lightweight running shoes',
+      'Price': 129.99,
+      'Amount': 35,
+      'Category': 'Sports',
+      'Size': '10',
+      'Color': 'Blue',
+      'SupplierID': 2,
+    });
+
+    await db.insert('Products', {
+      'Name': 'Smart Watch',
+      'Description': 'Fitness tracker with heart rate monitor',
+      'Price': 249.99,
+      'Amount': 15,
+      'Category': 'Electronics',
+      'Size': 'One Size',
+      'Color': 'Black',
+      'SupplierID': 1,
+    });
+
+    await db.insert('Products', {
+      'Name': 'Winter Jacket',
+      'Description': 'Warm winter jacket with hood',
+      'Price': 199.99,
+      'Amount': 20,
+      'Category': 'Fashion',
+      'Size': 'L',
+      'Color': 'Navy',
+      'SupplierID': 2,
+    });
+
+    await db.insert('Products', {
+      'Name': 'Air Fryer',
+      'Description': 'Digital air fryer with multiple cooking functions',
+      'Price': 129.99,
+      'Amount': 30,
+      'Category': 'Home',
+      'Size': 'Standard',
+      'Color': 'Silver',
+      'SupplierID': 3,
+    });
+
+    // Insert sample orders
+    final order1 = await db.insert('Orders', {
+      'User_ID': 2,
+      'Date': DateTime.now().toIso8601String(),
+      'GrandTotal': 0.0,
+      'Status': 'Pending',
+      'PaymentMethod': 'Credit Card',
+    });
+
+    await db.insert('OrderProducts', {
+      'OrderID': order1,
+      'ProductID': 1,
+      'Quantity': 1,
+    });
+
+    await db.insert('OrderProducts', {
+      'OrderID': order1,
+      'ProductID': 3,
+      'Quantity': 2,
+    });
+
+    final order2 = await db.insert('Orders', {
+      'User_ID': 3,
+      'Date': DateTime.now().toIso8601String(),
+      'GrandTotal': 0.0,
+      'Status': 'Shipped',
+      'PaymentMethod': 'PayPal',
+    });
+
+    await db.insert('OrderProducts', {
+      'OrderID': order2,
+      'ProductID': 2,
+      'Quantity': 1,
+    });
+
+    await db.insert('OrderProducts', {
+      'OrderID': order2,
+      'ProductID': 5,
+      'Quantity': 1,
+    });
+
+    // Insert sample reviews
+    await db.insert('Reviews', {
+      'User_ID': 2,
+      'ProductID': 1,
+      'ReviewDate': DateTime.now().toIso8601String(),
+      'Rating': 5,
+      'Comment': 'Amazing phone! The camera quality is outstanding.',
+    });
+
+    await db.insert('Reviews', {
+      'User_ID': 3,
+      'ProductID': 1,
+      'ReviewDate': DateTime.now().toIso8601String(),
+      'Rating': 4,
+      'Comment': 'Great phone but a bit expensive.',
+    });
+
+    await db.insert('Reviews', {
+      'User_ID': 2,
+      'ProductID': 2,
+      'ReviewDate': DateTime.now().toIso8601String(),
+      'Rating': 5,
+      'Comment': 'Perfect for my work needs.',
+    });
+
+    // Insert sample discounts
+    await db.insert('Discounts', {
+      'Percentage': 10.0,
+      'ExpiryDate':
+          DateTime.now().add(const Duration(days: 30)).toIso8601String(),
+      'ProductID': 1,
+      'Category': null,
+    });
+
+    await db.insert('Discounts', {
+      'Percentage': 15.0,
+      'ExpiryDate':
+          DateTime.now().add(const Duration(days: 30)).toIso8601String(),
+      'ProductID': null,
+      'Category': 'Electronics',
+    });
+
+    // Insert sample shipping fees
+    await db.insert('ShippingFees', {
+      'Country': 'USA',
+      'City': 'New York',
+      'ShippingFee': 10.00,
+    });
+
+    await db.insert('ShippingFees', {
+      'Country': 'USA',
+      'City': 'Los Angeles',
+      'ShippingFee': 12.00,
+    });
+
+    // Insert sample tax rates
+    await db.insert('TaxRates', {
+      'Country': 'USA',
+      'City': 'New York',
+      'Tax': 8.875,
+    });
+
+    await db.insert('TaxRates', {
+      'Country': 'USA',
+      'City': 'Los Angeles',
+      'Tax': 9.5,
     });
   }
 

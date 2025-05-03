@@ -57,7 +57,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
         itemBuilder: (context, index) {
           final order = _orders[index];
           return ListTile(
-            title: Text('Order #${order.orderId}'),
+            title: Text('Order #${order.id}'),
             subtitle: Text(
               'Date: ${order.date}\nTotal: \$${order.grandTotal.toStringAsFixed(2)}\nStatus: ${order.status}',
             ),
@@ -85,7 +85,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                           (context) => AlertDialog(
                             title: const Text('Delete Order'),
                             content: Text(
-                              'Are you sure you want to delete Order #${order.orderId}?',
+                              'Are you sure you want to delete Order #${order.id}?',
                             ),
                             actions: [
                               TextButton(
@@ -94,7 +94,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  _deleteOrder(order.orderId!);
+                                  _deleteOrder(order.id!);
                                   Navigator.pop(context);
                                 },
                                 child: const Text('Delete'),
