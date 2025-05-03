@@ -1,16 +1,97 @@
-# ecommerce_app_with_flutter_and_sqflite
+# E-Commerce App with Flutter and SQFlite
 
-A new Flutter project.
+This is a Flutter application that serves as a front-end for an e-commerce database system. The app uses SQFlite for local database storage and provides a user interface for managing users, products, orders, and shopping carts.
+
+## Features
+
+- User Management (Add, Edit, Delete, View)
+- Product Management (Add, Edit, Delete, View)
+- Order Management (Add, Edit, Delete, View)
+- Shopping Cart Functionality
+- SQLite Database Integration
+- Material Design UI
+
+## Prerequisites
+
+- Flutter SDK (version 3.7.2 or higher)
+- Dart SDK (version 3.0.0 or higher)
+- Android Studio / VS Code with Flutter extensions
+- macOS (for running on desktop) or Chrome (for web)
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd ecommerce_app_with_flutter_and_sqflite
+   ```
 
-A few resources to get you started if this is your first Flutter project:
+2. Install dependencies:
+   ```bash
+   flutter pub get
+   ```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+3. Run the app:
+   - For macOS desktop:
+     ```bash
+     flutter run -d macos
+     ```
+   - For web:
+     ```bash
+     flutter run -d chrome
+     ```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Project Structure
+
+```
+lib/
+├── main.dart               # Entry point
+├── models/                # Entity classes
+│   ├── user.dart
+│   ├── product.dart
+│   ├── order.dart
+│   └── cart.dart
+├── screens/               # UI screens
+│   ├── home_screen.dart
+│   ├── user_list_screen.dart
+│   ├── user_form_screen.dart
+│   ├── product_list_screen.dart
+│   ├── product_form_screen.dart
+│   ├── order_list_screen.dart
+│   ├── order_form_screen.dart
+│   └── cart_screen.dart
+└── services/              # Database operations
+    └── database_helper.dart
+```
+
+## Database Schema
+
+The app uses the following database tables:
+- Users
+- Products
+- Orders
+- OrderProducts
+- Carts
+- CartProducts
+- Addresses
+- Suppliers
+- Discounts
+- Reviews
+- ShippingFees
+- TaxRates
+
+## Screenshots
+
+1. Home Screen
+2. User List Screen
+3. Product List Screen
+4. Order List Screen
+5. Cart Screen
+
+## Contributing
+
+Feel free to submit issues and enhancement requests.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
