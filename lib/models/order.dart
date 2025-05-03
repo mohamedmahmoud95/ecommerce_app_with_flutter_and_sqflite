@@ -20,9 +20,9 @@ class Order {
   Map<String, dynamic> toMap() {
     return {
       'OrderID': id,
-      'User_ID': userId,
-      'Date': date.toIso8601String(),
-      'GrandTotal': grandTotal,
+      'UserID': userId,
+      'OrderDate': date.toIso8601String(),
+      'TotalAmount': grandTotal,
       'Status': status,
       'PaymentMethod': paymentMethod,
     };
@@ -31,9 +31,9 @@ class Order {
   factory Order.fromMap(Map<String, dynamic> map) {
     return Order(
       id: map['OrderID'],
-      userId: map['User_ID'],
-      date: DateTime.parse(map['Date']),
-      grandTotal: map['GrandTotal'],
+      userId: map['UserID'],
+      date: DateTime.parse(map['OrderDate']),
+      grandTotal: map['TotalAmount'],
       status: map['Status'],
       paymentMethod: map['PaymentMethod'],
       orderProducts:

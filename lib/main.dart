@@ -1,8 +1,38 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'services/database_helper.dart';
+import 'models/user.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await _createDefaultAdmin();
   runApp(const MyApp());
+}
+
+Future<void> _createDefaultAdmin() async {
+  final dbHelper = DatabaseHelper();
+
+  // Check if admin exists
+  final admin = await dbHelper.query(
+    'Users',
+    where: 'Email = ?',
+    whereArgs: ['admin@example.com'],
+  );
+
+  if (admin.isEmpty) {
+    // Create default admin user
+    final adminUser = User(
+      name: 'Admin',
+      email: 'admin@example.com',
+      password: 'admin123', // Default password
+      gender: 'Other',
+      dateOfBirth: DateTime(1990, 1, 1),
+      dateJoined: DateTime.now(),
+      userType: 'Admin',
+    );
+
+    await dbHelper.insert('Users', adminUser.toMap());
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -13,6 +43,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'E-Commerce App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -32,7 +63,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const LoginScreen(),
     );
   }
 }

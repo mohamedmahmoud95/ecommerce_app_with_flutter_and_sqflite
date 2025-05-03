@@ -6,8 +6,13 @@ import 'cart_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   final bool isAdmin;
+  final int userId;
 
-  const ProductListScreen({super.key, this.isAdmin = false});
+  const ProductListScreen({
+    super.key,
+    this.isAdmin = false,
+    required this.userId,
+  });
 
   @override
   State<ProductListScreen> createState() => _ProductListScreenState();
@@ -94,16 +99,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   Future<void> _addToCart(Product product) async {
-    // For demo purposes, we'll use user ID 1
     final cart = await _dbHelper.query(
       'Carts',
       where: 'User_ID = ?',
-      whereArgs: [1],
+      whereArgs: [widget.userId],
     );
 
     int cartId;
     if (cart.isEmpty) {
-      cartId = await _dbHelper.insert('Carts', {'User_ID': 1});
+      cartId = await _dbHelper.insert('Carts', {'User_ID': widget.userId});
     } else {
       cartId = cart.first['CartID'];
     }
@@ -181,11 +185,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
             ),
           IconButton(
             icon: const Icon(Icons.shopping_cart),
-            onPressed:
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CartScreen()),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CartScreen(userId: widget.userId),
                 ),
+              );
+            },
           ),
         ],
       ),

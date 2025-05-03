@@ -20,7 +20,7 @@ CREATE TABLE Addresses (
     FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
 );
 
-CREATE TABLE Products (
+CREATE TABLE Products (`
     ProductID INTEGER PRIMARY KEY AUTOINCREMENT,
     Name TEXT NOT NULL,
     Description TEXT,
