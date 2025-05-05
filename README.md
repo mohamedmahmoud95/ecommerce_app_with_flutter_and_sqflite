@@ -80,18 +80,4 @@ The app uses the following database tables:
 - ShippingFees
 - TaxRates
 
-## Screenshots
-
-1. Home Screen
-2. User List Screen
-3. Product List Screen
-4. Order List Screen
-5. Cart Screen
-
-## Contributing
-
-Feel free to submit issues and enhancement requests.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+## Screenshots and Documentation:
